@@ -64,7 +64,9 @@ button{cursor:pointer}
   background:#edf3f7;
   color:#264960;
   font-size:.82rem;
-  font-weight:850
+  font-weight:850;
+  touch-action:manipulation;
+  -webkit-tap-highlight-color:transparent
 }
 .rotation-tab.active{background:var(--navy);border-color:var(--navy);color:white;box-shadow:0 6px 15px rgba(18,60,102,.22)}
 .nav-row{display:block;margin-top:12px}
@@ -74,7 +76,9 @@ button{cursor:pointer}
   border-radius:10px;
   background:#f4f7f9;
   color:#21475f;
-  font-weight:800
+  font-weight:800;
+  touch-action:manipulation;
+  -webkit-tap-highlight-color:transparent
 }
 .icon-btn{width:42px;height:40px;font-size:1.2rem}
 .date-heading{text-align:center;min-width:0;width:100%;padding:2px 4px 4px}
@@ -227,9 +231,9 @@ button{cursor:pointer}
       <button class="view-btn active" id="monthViewButton">Month</button>
       <button class="view-btn" id="yearViewButton">Full year</button>
       <button class="view-btn" id="todayButton">Today</button>
-      <div class="nav-pair" aria-label="Change month">
-        <button class="icon-btn" id="prevMonth" aria-label="Previous month">‹</button>
-        <button class="icon-btn" id="nextMonth" aria-label="Next month">›</button>
+      <div class="nav-pair" id="periodNavigation" aria-label="Change month or year">
+        <button class="icon-btn" id="prevMonth" type="button" aria-label="Previous month">‹</button>
+        <button class="icon-btn" id="nextMonth" type="button" aria-label="Next month">›</button>
       </div>
     </div>
 
@@ -322,6 +326,7 @@ button{cursor:pointer}
 
   const deepClone = value => JSON.parse(JSON.stringify(value));
   const rotations = deepClone(DEFAULT_ROTATIONS);
+  const holidayMapCache = new Map();
 
   const now = new Date();
   let selectedRotation = 3;
@@ -438,6 +443,8 @@ button{cursor:pointer}
   }
 
   function holidayMapForDisplayYear(year) {
+    if (holidayMapCache.has(year)) return holidayMapCache.get(year);
+
     const map = new Map();
     for (let actualYear = year - 1; actualYear <= year + 1; actualYear++) {
       federalHolidaysForActualYear(actualYear).forEach(holiday => {
@@ -447,6 +454,7 @@ button{cursor:pointer}
         map.get(key).push(holiday);
       });
     }
+    holidayMapCache.set(year, map);
     return map;
   }
 
@@ -468,8 +476,10 @@ button{cursor:pointer}
       button.className = `rotation-tab${selectedRotation === number ? ' active' : ''}`;
       button.textContent = `${number}-Day Rotation`;
       button.addEventListener('click', () => {
+        if (selectedRotation === number) return;
         selectedRotation = number;
-        renderAll();
+        renderRotationTabs();
+        scheduleActiveCalendarRender();
       });
       container.appendChild(button);
     });
@@ -590,7 +600,8 @@ button{cursor:pointer}
 
   function renderYearView() {
     const container = $('yearViewContainer');
-    container.innerHTML = '';
+    const fragment = document.createDocumentFragment();
+
     for (let month = 0; month < 12; month++) {
       const card = document.createElement('article');
       card.className = 'year-month';
@@ -602,13 +613,39 @@ button{cursor:pointer}
       if (holidays.length) detailParts.push(holidays.map(item => `${item.day} ${item.short}`).join(' · '));
       if (paydays.length) detailParts.push(`Paydays: ${paydays.join(', ')}`);
       card.querySelector('.mini-details').textContent = detailParts.join(' | ') || 'No federal holidays this month.';
-      container.appendChild(card);
+      fragment.appendChild(card);
+    }
+
+    container.replaceChildren(fragment);
+  }
+
+  function renderActiveCalendar() {
+    if (view === 'month') {
+      renderMonthView();
+    } else {
+      renderYearView();
     }
   }
 
-  function renderCalendarViews() {
-    renderMonthView();
-    renderYearView();
+  let pendingRenderFrame = 0;
+  function scheduleActiveCalendarRender() {
+    pendingRenderFrame += 1;
+    const requestNumber = pendingRenderFrame;
+    const activeContainer = view === 'month' ? $('monthViewContainer') : $('yearViewContainer');
+    activeContainer.setAttribute('aria-busy', 'true');
+
+    requestAnimationFrame(() => {
+      if (requestNumber !== pendingRenderFrame) return;
+      renderActiveCalendar();
+      activeContainer.removeAttribute('aria-busy');
+    });
+  }
+
+  function updateNavigationLabels() {
+    const yearMode = view === 'year';
+    $('periodNavigation').setAttribute('aria-label', yearMode ? 'Change year' : 'Change month');
+    $('prevMonth').setAttribute('aria-label', yearMode ? 'Previous year' : 'Previous month');
+    $('nextMonth').setAttribute('aria-label', yearMode ? 'Next year' : 'Next month');
   }
 
   function renderViewState() {
@@ -617,32 +654,60 @@ button{cursor:pointer}
     $('yearViewContainer').hidden = monthVisible;
     $('monthViewButton').classList.toggle('active', monthVisible);
     $('yearViewButton').classList.toggle('active', !monthVisible);
+    updateNavigationLabels();
   }
 
   function renderAll() {
     renderRotationTabs();
     renderHeading();
-    renderCalendarViews();
     renderViewState();
+    renderActiveCalendar();
   }
 
-  $('prevMonth').addEventListener('click', () => {
-    selectedMonth--;
-    if (selectedMonth < 0) { selectedMonth = 11; selectedYear--; }
-    renderAll();
+  function changeDisplayedPeriod(direction) {
+    if (view === 'year') {
+      selectedYear += direction;
+    } else {
+      selectedMonth += direction;
+      if (selectedMonth < 0) {
+        selectedMonth = 11;
+        selectedYear -= 1;
+      } else if (selectedMonth > 11) {
+        selectedMonth = 0;
+        selectedYear += 1;
+      }
+    }
+
+    renderHeading();
+    scheduleActiveCalendarRender();
+  }
+
+  $('prevMonth').addEventListener('click', () => changeDisplayedPeriod(-1));
+  $('nextMonth').addEventListener('click', () => changeDisplayedPeriod(1));
+
+  $('monthViewButton').addEventListener('click', () => {
+    if (view === 'month') return;
+    view = 'month';
+    renderHeading();
+    renderViewState();
+    scheduleActiveCalendarRender();
   });
-  $('nextMonth').addEventListener('click', () => {
-    selectedMonth++;
-    if (selectedMonth > 11) { selectedMonth = 0; selectedYear++; }
-    renderAll();
+
+  $('yearViewButton').addEventListener('click', () => {
+    if (view === 'year') return;
+    view = 'year';
+    renderHeading();
+    renderViewState();
+    scheduleActiveCalendarRender();
   });
-  $('monthViewButton').addEventListener('click', () => { view = 'month'; renderAll(); });
-  $('yearViewButton').addEventListener('click', () => { view = 'year'; renderAll(); });
+
   $('todayButton').addEventListener('click', () => {
     selectedYear = now.getFullYear();
     selectedMonth = now.getMonth();
     view = 'month';
-    renderAll();
+    renderHeading();
+    renderViewState();
+    scheduleActiveCalendarRender();
   });
 
   loadSettings();
