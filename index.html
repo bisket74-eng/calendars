@@ -1,0 +1,718 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#123c66">
+<title>USPS Perpetual Rotation Calendars</title>
+<style>
+:root{
+  --navy:#123c66;
+  --navy-2:#0b2d4d;
+  --blue:#1d6fa5;
+  --paper:#eef3f7;
+  --card:#ffffff;
+  --ink:#18232d;
+  --muted:#5f7282;
+  --line:#d6e0e8;
+  --sunday:#edf1f4;
+  --holiday:#8d1d2c;
+  --pay:#08745a;
+  --shadow:0 12px 34px rgba(7,36,60,.14);
+}
+*{box-sizing:border-box}
+html{background:var(--paper)}
+body{
+  margin:0;
+  min-height:100vh;
+  font-family:Inter,ui-sans-serif,system-ui,-apple-system,"Segoe UI",Roboto,Arial,sans-serif;
+  color:var(--ink);
+  background:
+    radial-gradient(circle at 85% -10%,rgba(255,255,255,.26),transparent 30%),
+    linear-gradient(180deg,var(--navy-2) 0 140px,var(--paper) 140px 100%);
+}
+button,input,select{font:inherit}
+button{cursor:pointer}
+.app{max-width:1120px;margin:0 auto;padding:18px 12px 42px}
+.hero{color:white;padding:5px 4px 10px}
+.eyebrow{font-size:.72rem;letter-spacing:.14em;text-transform:uppercase;font-weight:850;color:#bdd7e9;margin-bottom:7px}
+.hero h1{font-size:clamp(1.55rem,5vw,2.35rem);line-height:1.05;margin:0;letter-spacing:-.025em}
+.hero p{max-width:760px;margin:0;color:#d9e8f2;font-size:.93rem;line-height:1.5}
+.status-note{
+  margin:0 0 12px;
+  padding:11px 13px;
+  border:1px solid #b9d5e7;
+  border-radius:14px;
+  background:#f7fbfe;
+  color:#26485f;
+  font-size:.82rem;
+  line-height:1.45;
+  box-shadow:0 7px 22px rgba(7,36,60,.08)
+}
+.controls,.calendar-card,.year-month{
+  background:var(--card);
+  border:1px solid rgba(17,61,101,.09);
+  box-shadow:var(--shadow)
+}
+.controls{border-radius:18px;padding:12px;margin-bottom:12px}
+.rotation-tabs{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}
+.rotation-tab{
+  min-height:48px;
+  border:1px solid #d0dce5;
+  border-radius:12px;
+  padding:8px 5px;
+  background:#edf3f7;
+  color:#264960;
+  font-size:.82rem;
+  font-weight:850;
+  touch-action:manipulation;
+  -webkit-tap-highlight-color:transparent
+}
+.rotation-tab.active{background:var(--navy);border-color:var(--navy);color:white;box-shadow:0 6px 15px rgba(18,60,102,.22)}
+.nav-row{display:block;margin-top:12px}
+.nav-pair{display:flex;gap:6px;margin-left:auto}
+.icon-btn,.view-btn,.action-btn,.shift-btn{
+  border:1px solid #d2dde5;
+  border-radius:10px;
+  background:#f4f7f9;
+  color:#21475f;
+  font-weight:800;
+  touch-action:manipulation;
+  -webkit-tap-highlight-color:transparent
+}
+.icon-btn{width:42px;height:40px;font-size:1.2rem}
+.date-heading{text-align:center;min-width:0;width:100%;padding:2px 4px 4px}
+.date-heading strong{display:block;color:#103e66;font-size:clamp(1.8rem,7vw,2.6rem);line-height:1;font-weight:950;letter-spacing:-.035em}
+.date-heading span{display:block;color:var(--muted);font-size:.72rem;margin-top:1px}
+.utility-row{display:flex;align-items:center;flex-wrap:nowrap;gap:7px;margin-top:10px}
+.view-btn,.action-btn{padding:9px 11px;font-size:.78rem}
+.view-btn.active{background:#0f6b5c;border-color:#0f6b5c;color:white}
+.action-btn{margin-left:auto}
+.adjust-panel{margin-top:10px;border-top:1px solid var(--line);padding-top:10px}
+.adjust-panel summary{font-size:.8rem;font-weight:850;color:#244d67;cursor:pointer;user-select:none}
+.palette{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:8px;margin-top:10px}
+.color-control{display:flex;align-items:center;gap:8px;padding:8px;border:1px solid #dae3ea;border-radius:10px;background:#f8fafb;font-size:.76rem;font-weight:750}
+.color-control input{width:34px;height:30px;border:0;padding:0;background:transparent}
+.shift-row{display:flex;align-items:center;flex-wrap:wrap;gap:7px;margin-top:10px;color:var(--muted);font-size:.75rem}
+.shift-btn{padding:7px 10px}
+.shift-value{font-weight:850;color:#244d67}
+.calendar-card{border-radius:18px;padding:12px;overflow:hidden}
+.calendar-topline{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:8px}
+.calendar-title h2{margin:0;color:#123f69;font-size:1.15rem}
+.calendar-title p{margin:3px 0 0;color:var(--muted);font-size:.76rem;line-height:1.35}
+.legend{display:flex;justify-content:flex-end;flex-wrap:wrap;gap:6px 9px}
+.legend-item{display:inline-flex;align-items:center;gap:5px;font-size:.69rem;font-weight:750;white-space:nowrap}
+.legend-swatch{width:15px;height:15px;border-radius:4px;border:1px solid rgba(0,0,0,.12)}
+.legend-sunday{background:var(--sunday)}
+.legend-pay{width:21px;height:21px;border-radius:50%;display:grid;place-items:center;background:#e8fff8;border:1px solid #18a27f;color:#08745a;font-size:.82rem;font-weight:950}
+.legend-holiday{width:15px;height:15px;border-radius:4px;background:#fff0f2;border:2px solid var(--holiday)}
+.calendar{
+  display:grid;
+  grid-template-columns:repeat(7,minmax(0,1fr));
+  border:1px solid var(--line);
+  border-radius:14px;
+  overflow:hidden;
+  background:white
+}
+.dow{background:var(--navy);color:white;text-align:center;padding:8px 2px;font-size:.72rem;font-weight:900;letter-spacing:.03em}
+.day{
+  position:relative;
+  min-width:0;
+  min-height:104px;
+  padding:7px 6px;
+  border-top:1px solid var(--line);
+  border-right:1px solid var(--line);
+  background:#fff;
+  overflow:hidden
+}
+.day:nth-child(7n){border-right:0}
+.day.empty{background:#f8fafb}
+.day.sunday{background:var(--sunday)}
+.day.is-today{box-shadow:inset 0 0 0 3px #1e88c7}
+.day.holiday-day{outline:2px solid var(--holiday);outline-offset:-2px}
+.day-head{display:flex;justify-content:space-between;align-items:flex-start;gap:4px}
+.date-number{font-size:.88rem;font-weight:950;line-height:1}
+.group-name{font-size:.58rem;font-weight:900;line-height:1;padding:3px 5px;border-radius:999px;background:rgba(255,255,255,.82);color:#18354a;white-space:nowrap;max-width:74px;overflow:hidden;text-overflow:ellipsis}
+.day.sunday .group-name{display:none}
+.payday-badge{
+  width:29px;height:29px;flex:0 0 29px;
+  border-radius:50%;display:grid;place-items:center;
+  background:#e7fff7;border:2px solid #159979;color:var(--pay);
+  font-size:1rem;font-weight:1000;line-height:1;
+  box-shadow:0 2px 5px rgba(0,77,59,.12)
+}
+.holiday-name{
+  position:absolute;left:4px;right:4px;bottom:4px;
+  padding:3px 4px;border-radius:5px;
+  background:rgba(8,35,58,.82);
+  color:#fff;font-size:.52rem;line-height:1.08;font-weight:850;
+  text-align:left;overflow-wrap:anywhere
+}
+.sunday-label{position:absolute;left:6px;bottom:6px;color:#6c7881;font-size:.57rem;font-weight:750}
+.month-summary{display:grid;grid-template-columns:1fr 1fr;gap:9px;margin-top:10px}
+.summary-box{background:#f3f7fa;border:1px solid #dce5eb;border-radius:11px;padding:9px;font-size:.73rem;line-height:1.4;color:#496171}
+.summary-box b{color:#153f60}
+.year-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px}
+.year-month{border-radius:14px;padding:9px;break-inside:avoid;min-width:0}
+.year-month h3{margin:0 0 7px;color:#123f69;font-size:.93rem}
+.mini-calendar{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));border:1px solid var(--line);overflow:hidden;border-radius:8px}
+.mini-dow{background:var(--navy);color:white;text-align:center;font-size:.53rem;font-weight:900;padding:4px 1px}
+.mini-day{position:relative;min-height:37px;padding:3px 2px;border-top:1px solid var(--line);border-right:1px solid var(--line);font-size:.58rem;font-weight:850;overflow:hidden}
+.mini-day:nth-child(7n){border-right:0}
+.mini-day.empty{background:#f8fafb}
+.mini-day.sunday{background:var(--sunday)}
+.mini-day.holiday-day{box-shadow:inset 0 0 0 2px var(--holiday)}
+.mini-pay{position:absolute;right:1px;top:1px;width:18px;height:18px;border-radius:50%;display:grid;place-items:center;background:#e7fff7;border:1.5px solid #159979;color:var(--pay);font-size:.69rem;font-weight:1000}
+.mini-holiday{
+  position:absolute;left:1px;right:1px;bottom:1px;
+  display:block;padding:1px 2px;border-radius:3px;
+  background:rgba(8,35,58,.82);color:#fff;
+  font-size:.39rem;line-height:1.02;font-weight:850;
+  overflow-wrap:anywhere
+}
+.mini-details{margin-top:6px;min-height:28px;color:#5c6f7d;font-size:.54rem;line-height:1.22}
+.footer-note{margin:12px 4px 0;color:#607686;font-size:.7rem;line-height:1.45}
+@media(max-width:850px){.year-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.day{min-height:94px}}
+@media(max-width:600px){
+  body{background:linear-gradient(180deg,var(--navy-2) 0 150px,var(--paper) 150px 100%)}
+  .app{padding:12px 8px 34px}
+  .rotation-tab{font-size:.72rem;min-height:44px;padding:6px 2px}
+  .calendar-card{padding:8px}
+  .calendar-topline{display:flex}.legend{justify-content:flex-end;margin-top:0}
+  .day{min-height:84px;padding:5px 4px}
+  .date-number{font-size:.78rem}.group-name{font-size:.49rem;padding:2px 4px;max-width:52px}
+  .payday-badge{width:25px;height:25px;flex-basis:25px;font-size:.88rem}
+  .holiday-name{font-size:.43rem;left:3px;right:3px;bottom:3px;padding:2px 3px}
+  .sunday-label{font-size:.48rem;left:4px;bottom:4px}
+  .month-summary{grid-template-columns:1fr}
+  .year-grid{grid-template-columns:1fr}
+  .mini-day{min-height:42px;font-size:.62rem}.mini-holiday{font-size:.38rem}
+}
+@media(max-width:380px){
+  .day{min-height:76px}.holiday-name{font-size:.39rem}.group-name{display:none}.dow{font-size:.62rem}
+  .view-btn,.action-btn{font-size:.7rem;padding:8px}.action-btn{margin-left:0}
+  .utility-row{gap:5px}.nav-pair{gap:5px}.icon-btn{width:40px}
+}
+@page{size:letter landscape;margin:.3in}
+@media print{
+  :root{--shadow:none}
+  body{background:#fff}
+  .app{max-width:none;padding:0}
+  .hero{color:#111;padding:0 0 6px}.eyebrow,.hero p,.status-note,.controls,.month-summary,.footer-note{display:none!important}
+  .hero h1{font-size:18pt;color:#123f69;margin:0}
+  .calendar-card{box-shadow:none;border:0;padding:0}
+  .calendar-topline{margin-bottom:4px}.calendar-title h2{font-size:12pt}.calendar-title p{font-size:7pt}
+  .year-grid{grid-template-columns:repeat(4,1fr);gap:5px}
+  .year-month{box-shadow:none;border:1px solid #bfcbd4;border-radius:5px;padding:4px}
+  .year-month h3{font-size:8pt;margin-bottom:3px}
+  .mini-dow{font-size:4.8pt;padding:2px 0}.mini-day{min-height:24px;font-size:5.3pt;padding:2px 1px}
+  .mini-pay{width:12px;height:12px;font-size:5.5pt}.mini-holiday{font-size:3.3pt}.mini-details{font-size:4.2pt;min-height:18px}
+  #monthViewContainer{display:none!important}#yearViewContainer{display:block!important}
+}
+</style>
+</head>
+<body>
+<div class="app">
+  <header class="hero">
+    <h1>Perpetual Rotation Calendars</h1>
+  </header>
+
+
+  <section class="controls" aria-label="Calendar controls">
+    <div class="rotation-tabs" id="rotationTabs"></div>
+
+    <div class="nav-row">
+      <div class="date-heading">
+        <strong id="dateHeading"></strong>
+      </div>
+    </div>
+
+    <div class="utility-row">
+      <button class="view-btn active" id="monthViewButton">Month</button>
+      <button class="view-btn" id="yearViewButton">Full year</button>
+      <button class="view-btn" id="todayButton">Today</button>
+      <div class="nav-pair" id="periodNavigation" aria-label="Change month or year">
+        <button class="icon-btn" id="prevMonth" type="button" aria-label="Previous month">‹</button>
+        <button class="icon-btn" id="nextMonth" type="button" aria-label="Next month">›</button>
+      </div>
+    </div>
+
+
+  </section>
+
+  <section id="monthViewContainer" class="calendar-card">
+    <div class="calendar-topline">
+      <div class="calendar-title">
+        <h2 id="monthTitle"></h2>
+      </div>
+    </div>
+    <div class="calendar" id="monthCalendar"></div>
+    <div class="month-summary">
+      <div class="summary-box" id="holidaySummary"></div>
+      <div class="summary-box" id="paydaySummary"></div>
+    </div>
+  </section>
+
+  <section id="yearViewContainer" class="year-grid" hidden></section>
+
+</div>
+
+<script>
+(() => {
+  'use strict';
+
+  const DAY_MS = 86400000;
+  const WEEK_MS = 7 * DAY_MS;
+  const ANCHOR_SATURDAY_UTC = Date.UTC(2026, 7, 1); // Saturday, August 1, 2026
+  const PAYDAY_ANCHOR_UTC = Date.UTC(2026, 6, 31); // Friday, July 31, 2026
+  const STORAGE_KEY = 'uspsRotationCalendarSettingsV3';
+
+  const DEFAULT_ROTATIONS = {
+    3: {
+      label: '3-Day',
+      days: [4, 5, 6],
+      dayText: 'Rotates Thursday → Friday → Saturday',
+      note: 'Monday, Tuesday, and Wednesday are always worked. Sunday is always off.',
+      colors: [
+        { name: 'Blue', hex: '#2377B8' },
+        { name: 'Green', hex: '#2F8A55' },
+        { name: 'Yellow', hex: '#F0C84B' }
+      ],
+      offset: 0
+    },
+    4: {
+      label: '4-Day',
+      days: [3, 4, 5, 6],
+      dayText: 'Rotates Wednesday → Thursday → Friday → Saturday',
+      note: 'Monday and Tuesday are always worked. Sunday is always off.',
+      colors: [
+        { name: 'Blue', hex: '#2377B8' },
+        { name: 'Green', hex: '#2F8A55' },
+        { name: 'Yellow', hex: '#F0C84B' },
+        { name: 'Purple', hex: '#7756A6' }
+      ],
+      offset: 0
+    },
+    5: {
+      label: '5-Day',
+      days: [2, 3, 4, 5, 6],
+      dayText: 'Rotates Tuesday → Wednesday → Thursday → Friday → Saturday',
+      note: 'Everybody always works Monday. Sunday is always off.',
+      colors: [
+        { name: 'Blue', hex: '#2377B8' },
+        { name: 'Green', hex: '#2F8A55' },
+        { name: 'Yellow', hex: '#F0C84B' },
+        { name: 'Red', hex: '#C94B50' },
+        { name: 'Orange', hex: '#D9822B' }
+      ],
+      offset: 0
+    },
+    6: {
+      label: '6-Day',
+      days: [1, 2, 3, 4, 5, 6],
+      dayText: 'Rotates Monday → Tuesday → Wednesday → Thursday → Friday → Saturday',
+      note: 'Sunday is always off. A Friday/Saturday color pair creates that group’s long weekend with Sunday.',
+      colors: [
+        { name: 'Blue', hex: '#2377B8' },
+        { name: 'Green', hex: '#2F8A55' },
+        { name: 'Brown', hex: '#8B5E3C' },
+        { name: 'Red', hex: '#C94B50' },
+        { name: 'Black', hex: '#25282B' },
+        { name: 'Yellow', hex: '#F0C84B' }
+      ],
+      offset: 0
+    }
+  };
+
+  const deepClone = value => JSON.parse(JSON.stringify(value));
+  const rotations = deepClone(DEFAULT_ROTATIONS);
+  const holidayMapCache = new Map();
+
+  const now = new Date();
+  let selectedRotation = 3;
+  let selectedYear = now.getFullYear();
+  let selectedMonth = now.getMonth();
+  let view = 'month';
+
+  const $ = id => document.getElementById(id);
+  const mod = (value, divisor) => ((value % divisor) + divisor) % divisor;
+  const pad = value => String(value).padStart(2, '0');
+  const dateKeyUTC = utc => {
+    const d = new Date(utc);
+    return `${d.getUTCFullYear()}-${pad(d.getUTCMonth() + 1)}-${pad(d.getUTCDate())}`;
+  };
+  const makeUTC = (year, month, day) => Date.UTC(year, month, day);
+  const weekdayUTC = utc => new Date(utc).getUTCDay();
+  const monthName = month => new Date(Date.UTC(2026, month, 1)).toLocaleDateString(undefined, { month: 'long', timeZone: 'UTC' });
+  const contrastText = hex => {
+    const value = hex.replace('#', '');
+    const r = parseInt(value.slice(0, 2), 16);
+    const g = parseInt(value.slice(2, 4), 16);
+    const b = parseInt(value.slice(4, 6), 16);
+    return ((r * 299 + g * 587 + b * 114) / 1000) > 158 ? '#16222c' : '#ffffff';
+  };
+
+  function loadSettings() {
+    try {
+      const saved = JSON.parse(localStorage.getItem(STORAGE_KEY) || '{}');
+      for (const key of Object.keys(rotations)) {
+        if (!saved[key]) continue;
+        if (Array.isArray(saved[key].colors) && saved[key].colors.length === rotations[key].colors.length) {
+          saved[key].colors.forEach((color, index) => {
+            if (typeof color.hex === 'string') rotations[key].colors[index].hex = color.hex;
+            if (typeof color.name === 'string' && color.name.trim()) rotations[key].colors[index].name = color.name.trim();
+          });
+        }
+        if (Number.isInteger(saved[key].offset)) rotations[key].offset = saved[key].offset;
+      }
+    } catch (error) {
+      console.warn('Could not load saved calendar settings.', error);
+    }
+  }
+
+  function saveSettings() {
+    const save = {};
+    for (const key of Object.keys(rotations)) {
+      save[key] = { colors: rotations[key].colors, offset: rotations[key].offset };
+    }
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(save));
+  }
+
+  function postalWeekStartUTC(utc) {
+    const day = weekdayUTC(utc);
+    const daysSinceSaturday = mod(day - 6, 7);
+    return utc - (daysSinceSaturday * DAY_MS);
+  }
+
+  function postalWeekIndex(utc) {
+    return Math.round((postalWeekStartUTC(utc) - ANCHOR_SATURDAY_UTC) / WEEK_MS);
+  }
+
+  function groupForDate(utc, rotationNumber = selectedRotation) {
+    const rotation = rotations[rotationNumber];
+    const dayPosition = rotation.days.indexOf(weekdayUTC(utc));
+    if (dayPosition === -1) return null;
+    const groupIndex = mod(dayPosition - postalWeekIndex(utc) + rotation.offset, rotation.colors.length);
+    return rotation.colors[groupIndex];
+  }
+
+  function isPayday(utc) {
+    return mod(Math.round((utc - PAYDAY_ANCHOR_UTC) / DAY_MS), 14) === 0;
+  }
+
+  function nthWeekdayOfMonth(year, month, weekday, occurrence) {
+    const first = makeUTC(year, month, 1);
+    const shift = mod(weekday - weekdayUTC(first), 7);
+    return makeUTC(year, month, 1 + shift + ((occurrence - 1) * 7));
+  }
+
+  function lastWeekdayOfMonth(year, month, weekday) {
+    const last = makeUTC(year, month + 1, 0);
+    const shift = mod(weekdayUTC(last) - weekday, 7);
+    return last - (shift * DAY_MS);
+  }
+
+  function observedFixedHoliday(year, month, day, name, shortName) {
+    const actual = makeUTC(year, month, day);
+    const weekday = weekdayUTC(actual);
+    let observed = actual;
+    let shifted = false;
+    if (weekday === 6) { observed -= DAY_MS; shifted = true; }
+    if (weekday === 0) { observed += DAY_MS; shifted = true; }
+    return {
+      utc: observed,
+      name: shifted ? `${name} (Observed)` : name,
+      short: shifted ? `${shortName} (Obs.)` : shortName
+    };
+  }
+
+  function federalHolidaysForActualYear(year) {
+    return [
+      observedFixedHoliday(year, 0, 1, "New Year's Day", "New Year's Day"),
+      { utc: nthWeekdayOfMonth(year, 0, 1, 3), name: 'Martin Luther King Jr. Day', short: 'MLK Jr. Day' },
+      { utc: nthWeekdayOfMonth(year, 1, 1, 3), name: "Washington's Birthday", short: "Washington's Birthday" },
+      { utc: lastWeekdayOfMonth(year, 4, 1), name: 'Memorial Day', short: 'Memorial Day' },
+      observedFixedHoliday(year, 5, 19, 'Juneteenth National Independence Day', 'Juneteenth'),
+      observedFixedHoliday(year, 6, 4, 'Independence Day', 'Independence Day'),
+      { utc: nthWeekdayOfMonth(year, 8, 1, 1), name: 'Labor Day', short: 'Labor Day' },
+      { utc: nthWeekdayOfMonth(year, 9, 1, 2), name: 'Columbus Day', short: 'Columbus Day' },
+      observedFixedHoliday(year, 10, 11, 'Veterans Day', 'Veterans Day'),
+      { utc: nthWeekdayOfMonth(year, 10, 4, 4), name: 'Thanksgiving Day', short: 'Thanksgiving' },
+      observedFixedHoliday(year, 11, 25, 'Christmas Day', 'Christmas Day')
+    ];
+  }
+
+  function holidayMapForDisplayYear(year) {
+    if (holidayMapCache.has(year)) return holidayMapCache.get(year);
+
+    const map = new Map();
+    for (let actualYear = year - 1; actualYear <= year + 1; actualYear++) {
+      federalHolidaysForActualYear(actualYear).forEach(holiday => {
+        if (new Date(holiday.utc).getUTCFullYear() !== year) return;
+        const key = dateKeyUTC(holiday.utc);
+        if (!map.has(key)) map.set(key, []);
+        map.get(key).push(holiday);
+      });
+    }
+    holidayMapCache.set(year, map);
+    return map;
+  }
+
+  function datesInMonth(year, month) {
+    const firstWeekday = weekdayUTC(makeUTC(year, month, 1));
+    const count = new Date(makeUTC(year, month + 1, 0)).getUTCDate();
+    return { firstWeekday, count };
+  }
+
+  function currentDayMatches(year, month, day) {
+    return now.getFullYear() === year && now.getMonth() === month && now.getDate() === day;
+  }
+
+  function renderRotationTabs() {
+    const container = $('rotationTabs');
+    container.innerHTML = '';
+    [3, 4, 5, 6].forEach(number => {
+      const button = document.createElement('button');
+      button.className = `rotation-tab${selectedRotation === number ? ' active' : ''}`;
+      button.textContent = `${number}-Day Rotation`;
+      button.addEventListener('click', () => {
+        if (selectedRotation === number) return;
+        selectedRotation = number;
+        renderRotationTabs();
+        scheduleActiveCalendarRender();
+      });
+      container.appendChild(button);
+    });
+  }
+
+  function renderHeading() {
+    const rotation = rotations[selectedRotation];
+    $('dateHeading').textContent = view === 'month' ? `${monthName(selectedMonth)} ${selectedYear}` : `${selectedYear}`;
+    $('monthTitle').textContent = `${monthName(selectedMonth)} ${selectedYear}`;
+  }
+
+  function renderPalette() {
+    const rotation = rotations[selectedRotation];
+    const container = $('palette');
+    container.innerHTML = '';
+    rotation.colors.forEach((color, index) => {
+      const control = document.createElement('label');
+      control.className = 'color-control';
+      control.innerHTML = `<input type="color" value="${color.hex}" aria-label="Choose ${color.name} color"><span>${color.name}</span>`;
+      control.querySelector('input').addEventListener('input', event => {
+        rotation.colors[index].hex = event.target.value;
+        saveSettings();
+        renderCalendarViews();
+      });
+      container.appendChild(control);
+    });
+    $('shiftValue').textContent = rotation.offset === 0 ? 'Original alignment' : `Shift ${rotation.offset > 0 ? '+' : ''}${rotation.offset}`;
+  }
+
+  function buildMonthCalendar(container, year, month, mini = false) {
+    const holidays = holidayMapForDisplayYear(year);
+    const { firstWeekday, count } = datesInMonth(year, month);
+    container.innerHTML = '';
+
+    ['S', 'M', 'T', 'W', 'T', 'F', 'S'].forEach(label => {
+      const heading = document.createElement('div');
+      heading.className = mini ? 'mini-dow' : 'dow';
+      heading.textContent = label;
+      container.appendChild(heading);
+    });
+
+    const cells = Math.ceil((firstWeekday + count) / 7) * 7;
+    for (let cellIndex = 0; cellIndex < cells; cellIndex++) {
+      const day = cellIndex - firstWeekday + 1;
+      const cell = document.createElement('div');
+      cell.className = mini ? 'mini-day' : 'day';
+
+      if (day < 1 || day > count) {
+        cell.classList.add('empty');
+        container.appendChild(cell);
+        continue;
+      }
+
+      const utc = makeUTC(year, month, day);
+      const weekday = weekdayUTC(utc);
+      const holidayItems = holidays.get(dateKeyUTC(utc)) || [];
+      const group = groupForDate(utc);
+      const payday = isPayday(utc);
+
+      if (weekday === 0) cell.classList.add('sunday');
+      if (holidayItems.length) cell.classList.add('holiday-day');
+      if (!mini && currentDayMatches(year, month, day)) cell.classList.add('is-today');
+
+      if (group) {
+        cell.style.background = group.hex;
+        cell.style.color = contrastText(group.hex);
+      }
+
+      if (mini) {
+        cell.innerHTML = `<span>${day}</span>`;
+        if (payday) cell.insertAdjacentHTML('beforeend', '<span class="mini-pay">$</span>');
+        holidayItems.forEach(item => cell.insertAdjacentHTML('beforeend', `<span class="mini-holiday">${item.short}</span>`));
+      } else {
+        const groupLabel = group ? `<span class="group-name">${group.name}</span>` : '';
+        const paydayBadge = payday ? '<span class="payday-badge" title="USPS payday">$</span>' : '';
+        cell.innerHTML = `<div class="day-head"><span class="date-number">${day}</span><span style="display:flex;gap:3px;align-items:flex-start">${groupLabel}${paydayBadge}</span></div>`;
+        if (weekday === 0 && !holidayItems.length) cell.insertAdjacentHTML('beforeend', '<span class="sunday-label">Sunday off</span>');
+        if (holidayItems.length) {
+          const names = holidayItems.map(item => item.short).join(' / ');
+          cell.insertAdjacentHTML('beforeend', `<div class="holiday-name">${names}</div>`);
+        }
+      }
+
+      container.appendChild(cell);
+    }
+  }
+
+  function monthHolidayItems(year, month) {
+    const map = holidayMapForDisplayYear(year);
+    return [...map.entries()]
+      .filter(([key]) => Number(key.slice(5, 7)) - 1 === month)
+      .flatMap(([key, items]) => items.map(item => ({ day: Number(key.slice(8, 10)), ...item })))
+      .sort((a, b) => a.day - b.day);
+  }
+
+  function monthPaydays(year, month) {
+    const { count } = datesInMonth(year, month);
+    const days = [];
+    for (let day = 1; day <= count; day++) {
+      if (isPayday(makeUTC(year, month, day))) days.push(day);
+    }
+    return days;
+  }
+
+  function renderMonthView() {
+    buildMonthCalendar($('monthCalendar'), selectedYear, selectedMonth, false);
+    const holidays = monthHolidayItems(selectedYear, selectedMonth);
+    const paydays = monthPaydays(selectedYear, selectedMonth);
+
+    $('holidaySummary').innerHTML = holidays.length
+      ? `<b>Federal / USPS holidays</b><br>${holidays.map(item => `${item.day}: ${item.name}`).join('<br>')}`
+      : '<b>Federal / USPS holidays</b><br>None this month.';
+
+    $('paydaySummary').innerHTML = paydays.length
+      ? `<b>USPS paydays</b><br>${paydays.map(day => `${monthName(selectedMonth)} ${day}`).join(' and ')}`
+      : '<b>USPS paydays</b><br>None this month.';
+  }
+
+  function renderYearView() {
+    const container = $('yearViewContainer');
+    const fragment = document.createDocumentFragment();
+
+    for (let month = 0; month < 12; month++) {
+      const card = document.createElement('article');
+      card.className = 'year-month';
+      const holidays = monthHolidayItems(selectedYear, month);
+      const paydays = monthPaydays(selectedYear, month);
+      card.innerHTML = `<h3>${monthName(month)}</h3><div class="mini-calendar"></div><div class="mini-details"></div>`;
+      buildMonthCalendar(card.querySelector('.mini-calendar'), selectedYear, month, true);
+      const detailParts = [];
+      if (holidays.length) detailParts.push(holidays.map(item => `${item.day} ${item.short}`).join(' · '));
+      if (paydays.length) detailParts.push(`Paydays: ${paydays.join(', ')}`);
+      card.querySelector('.mini-details').textContent = detailParts.join(' | ') || 'No federal holidays this month.';
+      fragment.appendChild(card);
+    }
+
+    container.replaceChildren(fragment);
+  }
+
+  function renderActiveCalendar() {
+    if (view === 'month') {
+      renderMonthView();
+    } else {
+      renderYearView();
+    }
+  }
+
+  let pendingRenderFrame = 0;
+  function scheduleActiveCalendarRender() {
+    pendingRenderFrame += 1;
+    const requestNumber = pendingRenderFrame;
+    const activeContainer = view === 'month' ? $('monthViewContainer') : $('yearViewContainer');
+    activeContainer.setAttribute('aria-busy', 'true');
+
+    requestAnimationFrame(() => {
+      if (requestNumber !== pendingRenderFrame) return;
+      renderActiveCalendar();
+      activeContainer.removeAttribute('aria-busy');
+    });
+  }
+
+  function updateNavigationLabels() {
+    const yearMode = view === 'year';
+    $('periodNavigation').setAttribute('aria-label', yearMode ? 'Change year' : 'Change month');
+    $('prevMonth').setAttribute('aria-label', yearMode ? 'Previous year' : 'Previous month');
+    $('nextMonth').setAttribute('aria-label', yearMode ? 'Next year' : 'Next month');
+  }
+
+  function renderViewState() {
+    const monthVisible = view === 'month';
+    $('monthViewContainer').hidden = !monthVisible;
+    $('yearViewContainer').hidden = monthVisible;
+    $('monthViewButton').classList.toggle('active', monthVisible);
+    $('yearViewButton').classList.toggle('active', !monthVisible);
+    updateNavigationLabels();
+  }
+
+  function renderAll() {
+    renderRotationTabs();
+    renderHeading();
+    renderViewState();
+    renderActiveCalendar();
+  }
+
+  function changeDisplayedPeriod(direction) {
+    if (view === 'year') {
+      selectedYear += direction;
+    } else {
+      selectedMonth += direction;
+      if (selectedMonth < 0) {
+        selectedMonth = 11;
+        selectedYear -= 1;
+      } else if (selectedMonth > 11) {
+        selectedMonth = 0;
+        selectedYear += 1;
+      }
+    }
+
+    renderHeading();
+    scheduleActiveCalendarRender();
+  }
+
+  $('prevMonth').addEventListener('click', () => changeDisplayedPeriod(-1));
+  $('nextMonth').addEventListener('click', () => changeDisplayedPeriod(1));
+
+  $('monthViewButton').addEventListener('click', () => {
+    if (view === 'month') return;
+    view = 'month';
+    renderHeading();
+    renderViewState();
+    scheduleActiveCalendarRender();
+  });
+
+  $('yearViewButton').addEventListener('click', () => {
+    if (view === 'year') return;
+    view = 'year';
+    renderHeading();
+    renderViewState();
+    scheduleActiveCalendarRender();
+  });
+
+  $('todayButton').addEventListener('click', () => {
+    selectedYear = now.getFullYear();
+    selectedMonth = now.getMonth();
+    view = 'month';
+    renderHeading();
+    renderViewState();
+    scheduleActiveCalendarRender();
+  });
+
+  loadSettings();
+  renderAll();
+})();
+</script>
+</body>
+</html>
