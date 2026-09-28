@@ -219,6 +219,13 @@ button{cursor:pointer}
     z-index: 3;
   }
 }
+  /* Hide group/color labels on desktop and laptop.
+   The colored calendar cells already identify the group. */
+@media (min-width: 601px) {
+  .day .group-name {
+    display: none !important;
+  }
+}
 </style>
 </head>
 <body>
