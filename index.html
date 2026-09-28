@@ -209,6 +209,16 @@ button{cursor:pointer}
   .mini-pay{width:12px;height:12px;font-size:5.5pt}.mini-holiday{font-size:3.3pt}.mini-details{font-size:4.2pt;min-height:18px}
   #monthViewContainer{display:none!important}#yearViewContainer{display:block!important}
 }
+  /* Desktop/laptop-only payday badge fix.
+   Everything else in the calendar remains unchanged. */
+@media (min-width: 601px) {
+  .day .payday-badge {
+    position: absolute;
+    top: 27px;
+    right: 6px;
+    z-index: 3;
+  }
+}
 </style>
 </head>
 <body>
