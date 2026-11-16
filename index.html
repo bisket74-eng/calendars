@@ -226,6 +226,31 @@ button{cursor:pointer}
     display: none !important;
   }
 }
+
+/* Print Year: force the selected 12-month view onto one color-preserving page. */
+@media print {
+  @page { size: letter landscape; margin: .22in; }
+  html, body { background:#fff !important; }
+  body { -webkit-print-color-adjust:exact !important; print-color-adjust:exact !important; }
+  .hero { display:none !important; }
+  .print-year-heading {
+    display:block !important;
+    margin:0 0 5px;
+    color:#123f69;
+    font-size:15pt;
+    font-weight:900;
+  }
+  #yearViewContainer {
+    display:grid !important;
+    grid-template-columns:repeat(4,minmax(0,1fr)) !important;
+    gap:5px !important;
+    width:100%;
+  }
+  .year-month { padding:3px; }
+  .year-month h3 { margin:0 0 2px; }
+  .mini-details { min-height:13px; margin-top:2px; }
+}
+
 </style>
 </head>
 <body>
