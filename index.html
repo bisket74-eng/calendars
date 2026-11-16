@@ -248,6 +248,7 @@ button{cursor:pointer}
       <button class="view-btn active" id="monthViewButton">Month</button>
       <button class="view-btn" id="yearViewButton">Full year</button>
       <button class="view-btn" id="todayButton">Today</button>
+      <button class="action-btn" id="printYearButton" type="button">Print Year</button>
       <div class="nav-pair" id="periodNavigation" aria-label="Change month or year">
         <button class="icon-btn" id="prevMonth" type="button" aria-label="Previous month">‹</button>
         <button class="icon-btn" id="nextMonth" type="button" aria-label="Next month">›</button>
@@ -270,6 +271,7 @@ button{cursor:pointer}
     </div>
   </section>
 
+  <div class="print-year-heading" id="printYearHeading"></div>
   <section id="yearViewContainer" class="year-grid" hidden></section>
 
 </div>
@@ -716,6 +718,13 @@ button{cursor:pointer}
     renderHeading();
     renderViewState();
     scheduleActiveCalendarRender();
+  });
+
+  $('printYearButton').addEventListener('click', () => {
+    // Build a fresh print-only year view using the currently selected rotation and year.
+    renderYearView();
+    $('printYearHeading').textContent = `${selectedYear} · ${rotations[selectedRotation].label} Rotation`;
+    window.print();
   });
 
   $('todayButton').addEventListener('click', () => {
